@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Soft Spot</title>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div><h1 id="ttl">Soft Spot</h1><div class="sub">Saved on this device only · <button class="lnk" id="chn">Change name</button></div></div>
+    <div class="right" id="dots"></div>
+  </header>
+  <div class="tabs" id="tabs"></div>
+  <div id="shelf"></div>
+  <div class="tools"><button id="exp">Export backup</button><button id="imp">Import backup</button><input type="file" id="file" accept=".json" hidden></div>
+</div>
+
+<div class="ov" id="wel"><div class="welc"><h2>Welcome to your soft spot</h2><p>What should we call you?</p><input id="nm" placeholder="Your name" maxlength="30" autocomplete="given-name"><button class="put" id="go">Start my shelf</button></div></div>
+
+<div class="ov" id="ov"><div class="modal" role="dialog" aria-label="Add to your shelf">
+  <h2>Add to your shelf</h2>
+  <div class="chips" id="types"></div>
+  <input id="q" autocomplete="off">
+  <input id="url" placeholder="https://..." style="margin-top:8px;display:none">
+  <div class="res" id="res"></div>
+  <div id="photoBox" style="display:none"><label for="photo">Photo (optional)</label><input type="file" id="photo" accept="image/*"></div>
+  <label for="col">Collection</label><select id="col"></select>
+  <label for="date">Date (optional)</label><input type="date" id="date">
+  <label for="notes">Notes (optional)</label><textarea id="notes" placeholder="Why it's on your shelf…"></textarea>
+  <div class="row"><button class="put" id="put" disabled>Put on shelf</button><button class="sec" id="cancel">Cancel</button></div>
+</div></div>
+
+<div class="ov" id="ov2"><div class="modal" role="dialog" aria-label="Item details" id="det"></div></div>
+
+<script src="script.js"></script>
+</body>
+</html>
