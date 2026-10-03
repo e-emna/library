@@ -9,7 +9,15 @@ const TH={blue:['#e4eafe','#d5dffa','#d3dcfb','#b6c4f5','#1a1f3d','#5b6384','#8a
 const $=id=>document.getElementById(id);
 let S={items:[],cols:[],theme:'pink',name:''},cur='all',type='Song',sel=null,timer,photoData='',openId=null,view=null;
 try{const d=JSON.parse(localStorage.getItem('myshelf2')||'null');if(d)S=Object.assign(S,d)}catch(e){}
-const save=()=>{try{localStorage.setItem('myshelf2',JSON.stringify(S))}catch(e){alert('Storage is full. Export a backup and remove some photos.')}};
+function dlg({title,input,ok='OK',cancel=true}){return new Promise(res=>{
+ const d=$('dlg'),i=$('di');$('dt').textContent=title;i.style.display=input?'block':'none';i.value='';i.placeholder=input||'';
+ $('dyes').textContent=ok;$('dno').style.display=cancel?'':'none';d.classList.add('show');(input?i:$('dyes')).focus();
+ const end=v=>{d.classList.remove('show');d.onkeydown=null;$('dyes').onclick=$('dno').onclick=null;d.onclick=null;res(v)};
+ $('dyes').onclick=()=>end(input?i.value:true);$('dno').onclick=()=>end(null);
+ d.onclick=e=>{if(e.target===d)end(null)};
+ d.onkeydown=e=>{if(e.key==='Escape'){e.stopPropagation();end(null)}if(e.key==='Enter'&&input){e.preventDefault();end(i.value)}};
+})}
+const save=()=>{try{localStorage.setItem('myshelf2',JSON.stringify(S))}catch(e){dlg({title:'Storage is full. Export a backup and remove some photos.',cancel:false})}};
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const star=(()=>{const p=[];for(let i=0;i<24;i++){const a=i*Math.PI/12,r=i%2?40:50;p.push((50+r*Math.sin(a)).toFixed(1)+'% '+(50-r*Math.cos(a)).toFixed(1)+'%')}return`polygon(${p.join(',')})`})();
 document.documentElement.style.setProperty('--star',star);
@@ -37,10 +45,11 @@ function art(i){const t=i.type,im=esc(i.img);
 function render(){
  const n=c=>S.items.filter(i=>c==='all'||i.col===c).length;
  $('tabs').innerHTML=`<button class="tab ${cur==='all'?'on':''}" data-c="all">All<span>${n('all')}</span></button>`+
-  S.cols.map(c=>`<button class="tab ${cur===c?'on':''}" data-c="${esc(c)}">${esc(c)}<span>${n(c)}</span></button>`).join('')+`<button class="tab" id="newc">+ New collection</button>`;
+  S.cols.map(c=>`<button class="tab ${cur===c?'on':''}" data-c="${esc(c)}">${esc(c)}<span>${n(c)}</span></button>`).join('')+`<button class="tab" id="newc">+ New collection</button>`+(cur!=='all'?`<button class="tab" id="delc">Remove collection</button>`:'');
  $('tabs').querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{cur=b.dataset.c;render()});
- $('newc').onclick=()=>{const v=(prompt('Name your collection')||'').trim();if(v&&!S.cols.includes(v)){S.cols.push(v);cur=v;save();render()}};
-const base=S.items.filter(i=>cur==='all'||i.col===cur);
+ $('newc').onclick=async()=>{const v=((await dlg({title:'Name your collection',input:'e.g. Comfort watches',ok:'Create'}))||'').trim();if(v&&!S.cols.includes(v)){S.cols.push(v);cur=v;view=null;save();render()}};
+if($('delc'))$('delc').onclick=async()=>{if(await dlg({title:`Remove "${cur}"? Its items stay on your shelf under All.`,ok:'Remove'})){S.items.forEach(i=>{if(i.col===cur)i.col=''});S.cols=S.cols.filter(c=>c!==cur);cur='all';view=null;save();render()}};
+ const base=S.items.filter(i=>cur==='all'||i.col===cur);
  if(view&&!base.some(i=>i.type===view))view=null;
  if(!base.length){$('shelf').innerHTML='<div class="empty" id="emp">Your shelf is empty — tap to add your first favourite</div>';$('emp').onclick=openAdd;return}
  if(!view){
@@ -61,7 +70,7 @@ function openDet(id){const i=S.items.find(x=>x.id===id);if(!i)return;openId=id;
  <label for="d2">Date (optional)</label><input type="date" id="d2" value="${esc(i.date)}">
  <label for="n2">Notes (optional)</label><textarea id="n2" placeholder="Why it's on your shelf…">${esc(i.notes)}</textarea>
  <div class="row"><button class="sec" id="rm">Remove</button><button class="put" id="sv">Save</button></div>`;
- $('rm').onclick=()=>{if(confirm('Remove this from your shelf?')){S.items=S.items.filter(x=>x.id!==id);save();$('ov2').classList.remove('show');render()}};
+ $('rm').onclick=async()=>{if(await dlg({title:'Remove this from your shelf?',ok:'Remove'})){S.items=S.items.filter(x=>x.id!==id);save();$('ov2').classList.remove('show');render()}};
  $('sv').onclick=()=>{i.date=$('d2').value;i.notes=$('n2').value.trim();save();$('ov2').classList.remove('show');render()};
  $('ov2').classList.add('show')}
 $('ov2').onclick=e=>{if(e.target===$('ov2'))$('ov2').classList.remove('show')};
@@ -118,7 +127,7 @@ $('put').onclick=()=>{
 $('exp').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,2)],{type:'application/json'}));a.download='my-shelf-backup.json';a.click()};
 $('imp').onclick=()=>$('file').click();
 $('file').onchange=async e=>{try{const d=JSON.parse(await e.target.files[0].text());if(!Array.isArray(d.items))throw 0;
- if(confirm('Replace your current shelf with this backup?')){S=Object.assign({items:[],cols:[],theme:'pink'},d);save();theme();render()}}catch(x){alert('That file is not a valid shelf backup.')}e.target.value=''};
+ if(await dlg({title:'Replace your current shelf with this backup?',ok:'Replace'})){S=Object.assign({items:[],cols:[],theme:'pink'},d);save();theme();render()}}catch(x){dlg({title:'That file is not a valid shelf backup.',cancel:false})}e.target.value=''};
 
 function head(){const n=S.name,t=n?(/s$/i.test(n)?n+'’':n+'’s')+' Soft Spot':'Soft Spot';$('ttl').textContent=t;document.title=t}
 function ask(){$('nm').value=S.name;$('wel').classList.add('show');$('nm').focus()}

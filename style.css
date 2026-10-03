@@ -75,4 +75,15 @@ textarea{min-height:70px;resize:vertical}
 .put:disabled{opacity:.35;cursor:not-allowed}
 .sec{background:var(--chip);color:var(--ink);border:0;border-radius:99px;padding:16px 22px}
 .tools{margin-top:18px;display:flex;gap:14px;font-size:13px}.tools button{background:none;border:0;color:var(--mute);text-decoration:underline;padding:0}
+@media (max-width:600px){
+.wrap{padding:28px 14px 60px}
+.pop{left:0;right:auto;flex-wrap:wrap;max-width:calc(100vw - 28px)}
+.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tile{height:250px;padding:14px;border-radius:22px}
+.art{max-height:150px}.art.sq{width:108px;height:108px}.art.app{width:96px;height:96px;border-radius:22px}
+.pol img{width:92px;height:92px}.pol{padding:7px 7px 20px}
+.vinyl{width:118px;height:118px}
+.star{width:112px;height:112px;font-size:16px;padding:20px}
+.tile small,.cnt{font-size:13px}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}.tile:hover,.tile:hover .stage{transform:none}}
