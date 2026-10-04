@@ -3,22 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Soft Spot</title>
+<title>Corner</title>
 <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div><h1 id="ttl">Soft Spot</h1><div class="sub">Saved on this device only · <button class="lnk" id="chn">Change name</button></div></div>
+    <div><h1 id="ttl">Corner</h1><div class="sub">Your little corner for things you love.</div><div class="sub sm">Saved on this device only · <button class="lnk" id="chn">Change name</button></div></div>
     <div class="right" id="dots"></div>
   </header>
   <div class="tabs" id="tabs"></div>
   <div id="shelf"></div>
-  <div class="tools"><button id="exp">Export backup</button><button id="imp">Import backup</button><input type="file" id="file" accept=".json" hidden></div>
+  <div class="tools"><button id="exp">Export backup</button><button id="imp">Import backup</button><input type="file" id="file" accept=".json" hidden><button id="tmkb">TMDB key</button></div>
+  <p class="credit" id="credit"></p>
 </div>
 
-<div class="ov" id="wel"><div class="welc"><h2>Welcome to your soft spot</h2><p>What should we call you?</p><input id="nm" placeholder="Your name" maxlength="30" autocomplete="given-name"><button class="put" id="go">Start my shelf</button></div></div>
+<div class="ov" id="wel"><div class="welc"><h2>Welcome to your corner</h2><p>Your little corner for things you love. What should we call you?</p><input id="nm" placeholder="Your name" maxlength="30" autocomplete="given-name"><button class="put" id="go">Start my shelf</button></div></div>
 
 <div class="ov" id="ov"><div class="modal" role="dialog" aria-label="Add to your shelf">
   <h2>Add to your shelf</h2>

@@ -1,9 +1,10 @@
 const TYPES=['Song','Album','Artist','Book','Movie','Show','Game','Genre','Hobby','Link / Photo'];
-const MANUAL=['Game','Genre','Hobby','Link / Photo'];
-const PH={Game:'e.g. Hades',Genre:'e.g. pop',Hobby:'e.g. pottery','Link / Photo':'Title'};
+const MANUAL=['Genre','Hobby','Link / Photo'];
+const PH={Genre:'e.g. pop',Hobby:'e.g. pottery','Link / Photo':'Title'};
 const TH={blue:['#e4eafe','#d5dffa','#d3dcfb','#b6c4f5','#1a1f3d','#5b6384','#8a9be8'],
  pink:['#fde7f0','#f9d3e3','#f7cfe0','#f2b3cf','#451f33','#7a5568','#e58cb3'],
  green:['#e3f2e4','#cfe6d2','#cde4d0','#b0d4b6','#1d3a25','#52695a','#8bb88f'],
+ yellow:['#fff8d6','#fdecaa','#fbe8a0','#f7dc79','#4a3a08','#86703a','#f2c94c'],
  peach:['#ffeadb','#ffd9bd','#fdd5b8','#fbc29a','#4a2410','#8a5a42','#f4a77a'],
  purple:['#efe7fd','#e0d2f9','#ddd0f8','#c8b3f2','#2f1d52','#6a5d86','#a98be8']};
 const $=id=>document.getElementById(id);
@@ -37,7 +38,7 @@ document.addEventListener('click',closePops);
 function art(i){const t=i.type,im=esc(i.img);
  if(t==='Album'&&i.img)return`<div class="vinyl"><img src="${im}" alt=""></div>`;
  if(t==='Artist'&&i.img)return`<div class="pol"><img src="${im}" alt=""></div>`;
- if(t==='Game'&&i.img)return`<img class="art app" src="${im}" alt="">`;
+ 
  if(t==='Song'&&i.img)return`<img class="art sq" src="${im}" alt="">`;
  if(i.img)return`<img class="art" src="${im}" alt="">`;
  return`<div class="star">${esc(i.title)}</div>`}
@@ -97,31 +98,58 @@ $('photo').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileR
 
 $('q').oninput=()=>{check();if(MANUAL.includes(type))return;sel=null;check();clearTimeout(timer);
  const v=$('q').value.trim();if(v.length<2){$('res').innerHTML='';return}
- $('res').innerHTML='<div class="msg">Searching…</div>';timer=setTimeout(()=>search(v,type),350)};
+ $('res').innerHTML='<div class="msg">Searching…</div>';timer=setTimeout(()=>search(v,type),600)};
+
+const CC5=['US','KR','TR','SA','JP'];
+const J=async u=>{const c=new AbortController(),t=setTimeout(()=>c.abort(),9000);try{const r=await fetch(u,{signal:c.signal});if(!r.ok)throw 0;return await r.json()}finally{clearTimeout(t)}};
+const https=u=>(u||'').replace(/^http:/,'https:');
+async function itunes(q,P,map,cc){const rs=await Promise.allSettled(cc.map(c=>J(`https://itunes.apple.com/search?term=${encodeURIComponent(q)}&limit=6&country=${c}&${P}`)));
+ if(rs.every(r=>r.status==='rejected'))throw 0;return rs.flatMap(r=>r.status==='fulfilled'?r.value.results:[]).map(map)}
+const IM=r=>(r.artworkUrl100||'').replace('100x100','400x400');
+const WK={movie:{en:'film',ko:'영화',tr:'film',ar:'فيلم',ja:'映画'},show:{en:'television series',ko:'드라마',tr:'dizi',ar:'مسلسل',ja:'テレビドラマ'},game:{en:'video game'}};
+const WR={movie:/film|movie|영화|فيلم|映画/i,show:/series|television|drama|dizi|show|anime|드라마|مسلسل|ドラマ/i,game:/game/i};
+async function wiki(q,kind){const rs=await Promise.allSettled(Object.entries(WK[kind]).map(([l,w])=>J(`https://${l}.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrsearch=${encodeURIComponent(q+' '+w)}&gsrlimit=8&prop=pageimages|description&piprop=thumbnail&pithumbsize=400&pilimit=8`)));
+ if(rs.every(r=>r.status==='rejected'))throw 0;
+ return rs.map(r=>r.status==='fulfilled'?Object.values((r.value.query||{}).pages||{}).filter(p=>WR[kind].test(p.description||'')).sort((a,b)=>a.index-b.index).slice(0,5).map(p=>({title:p.title.replace(/ \(.*\)$/,''),sub:p.description,img:(p.thumbnail||{}).source||''})):[]).flat()}
+async function tmdb(q,kind){const d=await J(`https://api.themoviedb.org/3/search/${kind}?api_key=${encodeURIComponent(S.tmdb)}&query=${encodeURIComponent(q)}&include_adult=false`);
+ return d.results.slice(0,8).map(r=>{const t=r.title||r.name,o=r.original_title||r.original_name;return{title:t,sub:[(r.release_date||r.first_air_date||'').slice(0,4),o&&o!==t?o:''].filter(Boolean).join(' · '),img:r.poster_path?'https://image.tmdb.org/t/p/w342'+r.poster_path:''}})}
+const tvmaze=async q=>(await J(`https://api.tvmaze.com/search/shows?q=${encodeURIComponent(q)}`)).slice(0,8).map(x=>({title:x.show.name,sub:[(x.show.premiered||'').slice(0,4),x.show.language].filter(Boolean).join(' · '),img:https((x.show.image||{}).medium)}));
+async function gbooks(q){const d=await J(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=10&printType=books`);
+ return(d.items||[]).map(x=>{const v=x.volumeInfo||{};return{title:v.title+(v.subtitle?': '+v.subtitle:''),sub:[(v.authors||[]).slice(0,2).join(', '),(v.publishedDate||'').slice(0,4)].filter(Boolean).join(' · '),img:https((v.imageLinks||{}).thumbnail)}})}
+async function olib(q){const d=await J(`https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=8&fields=key,title,author_name,first_publish_year,cover_i`);
+ return d.docs.map(b=>({title:b.title,sub:[(b.author_name||[]).slice(0,2).join(', '),b.first_publish_year].filter(Boolean).join(' · '),img:b.cover_i?`https://covers.openlibrary.org/b/id/${b.cover_i}-L.jpg`:''}))}
+function merge(arrs){const seen=new Set(),out=[],L=Math.max(0,...arrs.map(a=>a.length));
+ for(let i=0;i<L;i++)for(const a of arrs){const r=a[i];if(!r||!r.title)continue;const k=(r.title+'|'+(r.sub||'').split(' · ')[0]).toLowerCase();if(seen.has(k))continue;seen.add(k);out.push(r)}
+ return out.slice(0,10)}
 
 async function search(q,t){
- try{let out=[];const E=encodeURIComponent(q);
-  if(t==='Book'){const d=await (await fetch(`https://openlibrary.org/search.json?q=${E}&limit=8&fields=key,title,author_name,first_publish_year,cover_i`)).json();
-   out=d.docs.map(b=>({title:b.title,sub:(b.author_name||[]).slice(0,2).join(', ')+(b.first_publish_year?' · '+b.first_publish_year:''),img:b.cover_i?`https://covers.openlibrary.org/b/id/${b.cover_i}-L.jpg`:''}))}
-  else if(t==='Artist'){const d=await (await fetch(`https://itunes.apple.com/search?term=${E}&limit=25&media=music&entity=album&attribute=artistTerm`)).json();
-   const seen={};d.results.forEach(r=>{if(!seen[r.artistName])seen[r.artistName]={title:r.artistName,sub:r.primaryGenreName||'',img:(r.artworkUrl100||'').replace('100x100','400x400')}});out=Object.values(seen).slice(0,8)}
-  else{const P={Song:'media=music&entity=song',Album:'media=music&entity=album',Movie:'media=movie&entity=movie',Show:'media=tvShow&entity=tvSeason'}[t];
-   const d=await (await fetch(`https://itunes.apple.com/search?term=${E}&limit=8&${P}`)).json();
-   out=d.results.map(r=>{const y=(r.releaseDate||'').slice(0,4),img=(r.artworkUrl100||'').replace('100x100','400x400');
-    if(t==='Song')return{title:r.trackName,sub:r.artistName,img};
-    if(t==='Album')return{title:r.collectionName,sub:r.artistName+(y?' · '+y:''),img};
-    if(t==='Movie')return{title:r.trackName,sub:[r.artistName,y].filter(Boolean).join(' · '),img};
-    return{title:r.collectionName,sub:y,img}})}
+ try{let jobs;
+  const song=r=>({title:r.trackName,sub:r.artistName,img:IM(r)}),alb=r=>({title:r.collectionName,sub:r.artistName+((r.releaseDate||'').slice(0,4)?' · '+r.releaseDate.slice(0,4):''),img:IM(r)});
+  if(t==='Song')jobs=[itunes(q,'media=music&entity=song',song,CC5)];
+  else if(t==='Album')jobs=[itunes(q,'media=music&entity=album',alb,CC5)];
+  else if(t==='Artist')jobs=[itunes(q,'media=music&entity=album&attribute=artistTerm',r=>({title:r.artistName,sub:r.primaryGenreName||'',img:IM(r)}),CC5)];
+  else if(t==='Book')jobs=[gbooks(q),olib(q)];
+  else if(t==='Movie')jobs=[S.tmdb?tmdb(q,'movie'):Promise.resolve([]),wiki(q,'movie'),itunes(q,'media=movie&entity=movie',r=>({title:r.trackName,sub:[r.artistName,(r.releaseDate||'').slice(0,4)].filter(Boolean).join(' · '),img:IM(r)}),['US'])];
+  else if(t==='Show')jobs=[S.tmdb?tmdb(q,'tv'):Promise.resolve([]),tvmaze(q),wiki(q,'show')];
+  else if(t==='Game')jobs=[wiki(q,'game')];
+  const rs=await Promise.allSettled(jobs);
   if($('q').value.trim()!==q||type!==t)return;
+  if(rs.every(r=>r.status==='rejected'))throw 0;
+  let out=merge(rs.map(r=>r.status==='fulfilled'?r.value:[]));
+  if(t==='Artist'){const seen={};out=Object.values(rs[0].status==='fulfilled'?rs[0].value.reduce((m,r)=>(m[r.title]=m[r.title]||r,m),seen):{}).slice(0,8)}
+  if(t==='Game')out.push({title:q,sub:'Not listed? Add it as typed',img:''});
   window._r=out;
-  $('res').innerHTML=out.length?out.map((r,i)=>`<button class="r" data-i="${i}">${r.img?`<img src="${esc(r.img.replace('400x400','100x100'))}" alt="">`:'<div class="ph"></div>'}<span><b>${esc(r.title)}</b><small>${esc(r.sub)}</small></span></button>`).join(''):'<div class="msg">No results. Try different words.</div>';
+  $('res').innerHTML=out.length?out.map((r,i)=>`<button class="r" data-i="${i}">${r.img?`<img src="${esc(r.img.replace('400x400','100x100'))}" alt="" loading="lazy">`:'<div class="ph"></div>'}<span><b>${esc(r.title)}</b><small>${esc(r.sub)}</small></span></button>`).join('')+((t==='Movie'||t==='Show')&&!S.tmdb?'<div class="msg">Missing something? <button class="lnk" id="tmk">Add a free TMDB key</button> for much better movie and show results.</div>':''):'<div class="msg">No results. Try different words'+((t==='Movie'||t==='Show')&&!S.tmdb?' or <button class="lnk" id="tmk">add a free TMDB key</button> for better results':'')+'.</div>';
   $('res').querySelectorAll('.r').forEach(b=>b.onclick=()=>{sel=window._r[b.dataset.i];$('res').querySelectorAll('.r').forEach(x=>x.classList.toggle('on',x===b));check()});
+  if($('tmk'))$('tmk').onclick=askKey;
  }catch(e){$('res').innerHTML='<div class="msg">Search failed. Check your connection and try again.</div>'}}
+async function askKey(){const v=((await dlg({title:'Paste your free TMDB API key (themoviedb.org → Settings → API)',input:'API key (v3 auth)',ok:'Save'}))||'').trim();if(v){S.tmdb=v;save();credit();const q=$('q').value.trim();if(q.length>1)search(q,type)}}
+function credit(){$('credit').textContent='Data from Apple iTunes, Wikipedia, TVmaze, Open Library and Google Books'+(S.tmdb?'. This product uses the TMDB API but is not endorsed or certified by TMDB.':'.')}
 
 $('put').onclick=()=>{
  let b=sel;
  if(MANUAL.includes(type)){const u=$('url').value.trim();b={title:$('q').value.trim(),sub:'',img:photoData,link:u}}
- S.items.push({id:Date.now(),type,title:b.title,sub:b.sub||'',img:b.img||'',link:b.link||'',date:$('date').value,notes:$('notes').value.trim(),col:$('col').value,added:Date.now()});
+ S.items.push({id:Date.now(),type,title:b.title,sub:b.sub==='Not listed? Add it as typed'?'':(b.sub||''),img:b.img||'',link:b.link||'',date:$('date').value,notes:$('notes').value.trim(),col:$('col').value,added:Date.now()});
  if(view)view=type;save();close();render()};
 
 $('exp').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,2)],{type:'application/json'}));a.download='my-shelf-backup.json';a.click()};
@@ -129,8 +157,8 @@ $('imp').onclick=()=>$('file').click();
 $('file').onchange=async e=>{try{const d=JSON.parse(await e.target.files[0].text());if(!Array.isArray(d.items))throw 0;
  if(await dlg({title:'Replace your current shelf with this backup?',ok:'Replace'})){S=Object.assign({items:[],cols:[],theme:'pink'},d);save();theme();render()}}catch(x){dlg({title:'That file is not a valid shelf backup.',cancel:false})}e.target.value=''};
 
-function head(){const n=S.name,t=n?(/s$/i.test(n)?n+'’':n+'’s')+' Soft Spot':'Soft Spot';$('ttl').textContent=t;document.title=t}
+function head(){const n=S.name,t=n?(/s$/i.test(n)?n+'’':n+'’s')+' Corner':'Corner';$('ttl').textContent=t;document.title=t}
 function ask(){$('nm').value=S.name;$('wel').classList.add('show');$('nm').focus()}
 function go(){const v=$('nm').value.trim();if(!v)return;S.name=v;save();head();$('wel').classList.remove('show')}
 $('go').onclick=go;$('nm').onkeydown=e=>{if(e.key==='Enter')go()};$('chn').onclick=ask;
-theme();render();head();if(!S.name)ask();
+$('tmkb').onclick=askKey;credit();theme();render();head();if(!S.name)ask();
